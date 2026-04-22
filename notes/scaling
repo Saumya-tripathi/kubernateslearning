@@ -4,6 +4,7 @@ by Anton putra
 
 These notes summarize the key Kubernetes autoscaling concepts covered in [Anton Putra's video](http://www.youtube.com/watch?v=hsJ2qtwoWZw), organized for both learning and interview preparation.
 
+
 ---
 
 ## 🚀 Kubernetes Pod Autoscaling
