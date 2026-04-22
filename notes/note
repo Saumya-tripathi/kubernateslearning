@@ -1,0 +1,41 @@
+kubectl port-forward pod/<your-pod-name> 31515:3000
+I have to run this as my app  is not working in browser for port forwarding
+
+Kubernates vrs docker
+Docker
+Each entry can optionally get docker compose to build an image.
+each entry represents a container we want to create
+each entry defines the networking req ports
+services:
+   ngnix:
+    build
+    ports
+   worker:
+    build
+    port
+   client:
+    build
+    ports
+
+Kubernates k8s(this is the short form for kubernates after k there are 8 letters and then s hence k8s)
+Expect all image to already be built
+One config file per object we want to create
+We have to manually setup all n/w-king
+
+We have to create config files for an object and that object will further used
+apiversion and kind in yaml
+there we have stndrd api version and according to that we have kind
+examples:
+api version v1
+kind pod
+
+api version api v1
+kind service under service we have nodeport for dev only not use for production, clusterapi, ingress
+
+Pod: consist of container which help to acheive an independent that and they are tightly coupled
+Eg: dd agent and service
+
+The Concept: How a Service knows which Pods to route traffic to. You "Label" a Pod (e.g., component: web) and the Service uses a "Selector" to find it.
+
+Interview Tip: Think of Labels as the "glue" that connects different K8s objects together without hard-coding IP addresses.
+

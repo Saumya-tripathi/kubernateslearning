@@ -1,0 +1,62 @@
+Topic:
+Kubernetes Autoscaling: HPA vs. VPA vs. Keda vs. CA vs. Karpenter vs. Fargate
+by Anton putra
+
+These notes summarize the key Kubernetes autoscaling concepts covered in [Anton Putra's video](http://www.youtube.com/watch?v=hsJ2qtwoWZw), organized for both learning and interview preparation.
+
+---
+
+## 🚀 Kubernetes Pod Autoscaling
+
+### 1. Horizontal Pod Autoscaler (HPA)
+* **Concept:** Increases or decreases the number of **replicas** (Pods) based on observed metrics [01:29](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=89).
+* **Mechanism:** Runs as a controller in the control plane. It periodically queries the **Metrics API** [01:47](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=107).
+* **Requirements:** * A **Metrics Server** must be installed (default in GKE, manual in EKS) [02:15](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=135).
+    * Pods **must** have defined `resource requests` [03:37](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=217).
+* **Interview Tip:** HPA uses *requests*, not *limits*, to calculate utilization percentages. Avoid setting `replicas` in your deployment YAML if using HPA to prevent "flapping" with GitOps tools like ArgoCD [04:50](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=290).
+
+### 2. Vertical Pod Autoscaler (VPA)
+* **Concept:** Adjusts the **CPU and memory reservations** (vertical scale) of existing Pods rather than adding more Pods [07:48](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=468).
+* **Modes:**
+    * **Off (Recommendation):** Only provides suggestions; doesn't change anything (safest for production) [08:29](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=509).
+    * **Initial:** Assigns resources only at Pod creation.
+    * **Recreate:** Evicts and restarts Pods to apply new limits (risky for stateful apps) [08:06](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=486).
+* **Critical Rule:** Never use HPA and VPA on the same metrics for the same workload; they will conflict [08:59](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=539).
+
+### 3. KEDA (Kubernetes Event-Driven Autoscaling)
+* **Concept:** Scales workloads based on **external events** (e.g., message queue depth, database queries) [10:14](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=614).
+* **Unique Feature:** Can **scale to zero** if there are no events, saving significant costs [10:36](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=636).
+* **Use Case:** Ideal for ETL pipelines or microservices reacting to Kafka, RabbitMQ, or AWS SQS [11:14](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=674).
+
+---
+
+## 🏗️ Kubernetes Node (Cluster) Autoscaling
+
+### 1. Cluster Autoscaler (CA)
+* **Mechanism:** Watches for **Pending Pods** that cannot be scheduled due to lack of resources [12:36](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=756).
+* **Scaling:** Increases the size of Cloud Provider **Node Groups** (ASGs).
+* **Limitation:** It usually scales by adding identical nodes from a pre-defined group, which can lead to wasted resources if a small Pod triggers a large node creation [12:50](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=770).
+
+### 2. Karpenter
+* **Concept:** A more flexible, high-performance autoscaler (originally by AWS) [13:14](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=794).
+* **Mechanism:** Bypasses Node Groups. It evaluates the specific requirements of pending Pods and provisions the **exact instance type** needed (Just-in-time provisioning) [13:23](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=803).
+* **Benefit:** Faster and more cost-efficient than CA by reducing resource "slack" [13:38](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=818).
+
+### 3. Serverless (Fargate / Autopilot)
+* **Concept:** Removes the need to manage nodes entirely [13:58](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=838).
+* **Mechanism:** The cloud provider provisions a dedicated, right-sized compute environment for every Pod [14:06](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=846).
+* **Trade-off:** Higher cost per unit of CPU/RAM but significantly lower operational overhead [14:13](http://www.youtube.com/watch?v=hsJ2qtwoWZw&t=853).
+
+---
+
+## 💡 Interview Quick-Reference Table
+
+| Tool | Scaling Dimension | Best For... | Key Constraint |
+| :--- | :--- | :--- | :--- |
+| **HPA** | Horizontal (Pods) | Stateless apps, Web servers | Needs resource requests defined |
+| **VPA** | Vertical (Resources) | Stateful apps (DBs) | Pod restarts required for changes |
+| **KEDA** | Event-based | Jobs, Message processing | Requires a "Scaler" for the event source |
+| **CA** | Nodes (Groups) | Standard cloud clusters | Limited by Node Group definitions |
+| **Karpenter**| Nodes (Direct) | Diverse workloads, Cost optimization | Cloud-specific (mainly AWS) |
+
+Would you like me to dive deeper into the YAML configuration for any of these specific tools?

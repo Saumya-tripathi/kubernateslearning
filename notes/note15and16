@@ -1,0 +1,102 @@
+Since you're likely preparing for technical interviews and reinforcing your understanding of the **Fib Calculator** multi-container setup, here are the condensed notes for **Section 14** and **Section 15** in text form.
+
+---
+
+## Section 14: Multi-Container Apps with Kubernetes
+This section focuses on orchestrating a complex system where multiple services (React, Express, Worker, Redis, Postgres) communicate within a cluster.
+
+### 1. Key Architectural Concepts
+* **Decoupling:** Moving from a single Docker Compose file to individual Kubernetes **Deployment** and **Service** files for every component.
+* **Stateful vs. Stateless:** * **Stateless (Web/Worker/API):** Can be scaled or restarted without losing data.
+    * **Stateful (Postgres/Redis):** Require persistent storage. In real-world production, these are often moved to managed services (RDS/Cloud SQL).
+* **Volume Claims (PVC):** Unlike Docker volumes, a **Persistent Volume Claim** in K8s is a request for storage that stays alive even if a Pod dies.
+
+### 2. Interview "Quick Hits"
+* **How do you handle secrets?** * We use the **Secret** object. It is created imperatively (via `kubectl`) or declaratively to store sensitive info like `POSTGRES_PASSWORD`.
+* **Why use a ClusterIP?**
+    * It is the default service type. It provides a stable internal IP address so Pods can talk to each other (e.g., Express API talking to Redis) without needing to know specific Pod IPs.
+
+---
+
+## Section 15: Handling Traffic with Ingress Controllers
+This section shifts focus to "North-South" traffic (traffic entering the cluster from the outside world).
+
+### 1. The Role of Ingress
+* **Load Balancer Service vs. Ingress:** * **LoadBalancer Service:** One per service; expensive in cloud environments because it spins up a unique physical Load Balancer for every entry point.
+    * **Ingress:** A single Load Balancer that acts as a traffic cop, routing requests based on the URL path.
+* **Ingress Controller:** The actual software (like **ingress-nginx**) that processes the rules. Kubernetes does not come with one by default; it must be installed.
+* **Routing Rules:** * Requests to `/` go to the **Client** (React).
+    * Requests to `/api` go to the **Server** (Express).
+
+### 2. Interview "Quick Hits"
+* **What is an Ingress Controller vs. an Ingress Resource?**
+    * The **Resource** is the YAML file where you define rules (the "config"). The **Controller** is the Pod/Process that actually executes those rules (the "engine").
+* **How does Ingress-Nginx work?**
+    * It watches the Kubernetes API for new Ingress Resources. When it sees one, it updates its internal Nginx configuration to route traffic accordingly.
+
+---
+
+## Study Summary Table
+
+| Feature | Section 14 (Internal) | Section 15 (External) |
+| :--- | :--- | :--- |
+| **Primary Goal** | Pod-to-Pod communication. | User-to-Cluster communication. |
+| **Storage** | Persistent Volume Claims (PVC). | N/A (Stateless routing). |
+| **Security** | Kubernetes Secrets. | Ingress (SSL Termination point). |
+| **Component** | ClusterIP Services. | Ingress Controller (Nginx). |
+
+---
+
+### Key Commands to Remember
+* `kubectl get storageclass`: Check available storage providers.
+* `kubectl apply -f k8s/`: Apply all configurations in a folder.
+* `kubectl get ingress`: Check the status/IP of your entry point.
+* `kubectl describe ingress <name>`: The #1 command for debugging routing issues.
+
+**Interview Tip:** If asked about scaling, mention that in **Section 14**, we scale the **Deployment** replicas, but in **Section 15**, the **Ingress Controller** handles the distribution of that increased traffic across those replicas automatically.
+In Kubernetes, there are several built-in Secret types designed for different use cases. While you often use the `generic` subcommand in `kubectl`, the actual type created in that case is called **Opaque**.
+
+Here are the primary types you'll encounter in interviews and daily work:
+
+### 1. Opaque (Generic)
+This is the **default** type. When you run `kubectl create secret generic`, Kubernetes creates an **Opaque** secret. It is used for arbitrary key-value pairs like:
+* Database passwords
+* API keys
+* Application configuration tokens
+
+### 2. Service Account Token
+* **Type:** `kubernetes.io/service-account-token`
+* **Usage:** These are used to identify a **Service Account**. They contain a token that allows Pods to authenticate with the Kubernetes API server to perform actions within the cluster.
+
+### 3. Docker Registry
+* **Type:** `kubernetes.io/dockerconfigjson` or `kubernetes.io/dockercfg`
+* **Usage:** Used to store credentials (username/password) for a private Docker registry. You use this when your Pod needs to pull an image from a private repository like Docker Hub (private), AWS ECR, or Google GCR.
+
+### 4. TLS
+* **Type:** `kubernetes.io/tls`
+* **Usage:** Specifically for **SSL/TLS certificates** and private keys. These are most commonly used by **Ingress Controllers** to handle HTTPS traffic for your website.
+
+### 5. Basic Authentication
+* **Type:** `kubernetes.io/basic-auth`
+* **Usage:** Used for storing a username and password specifically for HTTP Basic Authentication.
+
+### 6. SSH Authentication
+* **Type:** `kubernetes.io/ssh-auth`
+* **Usage:** Used for storing data for SSH authentication, such as a private key used to pull code from a private Git repository.
+
+### 7. Bootstrap Token
+* **Type:** `bootstrap.kubernetes.io/token`
+* **Usage:** A specialized secret used during the node "bootstrap" process (when a new node is joining the cluster) to ensure the node is authorized.
+
+---
+
+### Summary Table for Interviews
+
+| Subcommand | K8s Type | Best Used For |
+| :--- | :--- | :--- |
+| **generic** | `Opaque` | General app secrets (Passwords, API keys). |
+| **tls** | `kubernetes.io/tls` | HTTPS certificates (`tls.crt`, `tls.key`). |
+| **docker-registry**| `kubernetes.io/dockerconfigjson` | Pulling private images. |
+| (N/A) | `kubernetes.io/ssh-auth` | SSH Private keys. |
+
+**Pro-Tip:** If you're asked in an interview why we use different types if they all just store Base64 data, the answer is **validation**. Kubernetes can perform basic "sanity checks" on specific types (like ensuring a TLS secret has both a certificate and a key) to help prevent configuration errors.

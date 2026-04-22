@@ -1,0 +1,35 @@
+[Helm](https://helm.sh/) is often described as the **Package Manager for Kubernetes**, serving the same purpose as `npm` does for JavaScript or `apt` for Ubuntu. It is a tool that streamlines the process of installing, updating, and managing complex Kubernetes applications.
+
+In the context of the [Docker and Kubernetes: The Complete Guide](https://www.udemy.com/course/docker-and-kubernetes-the-complete-guide/) course you are taking, you likely encountered Helm during the **Ingress-Nginx** installation in Section 16.
+
+### Why do we need Helm for Kubernetes?
+
+When an application grows, managing it with standard YAML files becomes difficult. Helm solves three primary problems:
+
+#### 1. Managing Complexity (The "One-Click" Install)
+A production-ready application usually requires many K8s objects (Deployments, Services, ConfigMaps, Secrets, Ingress, RBAC roles). Instead of running `kubectl apply -f` on ten different files, you use Helm to install a **Chart** (a package of all those files) with a single command:
+`helm install <release-name> <chart-name>`
+
+#### 2. Templating and Reusability
+Standard K8s YAML files are static. If you want to deploy the same app to "Dev," "Staging," and "Production" with different settings (like different replica counts or image versions), you would normally need three sets of files.
+* Helm uses **Templates**. You write one YAML file with placeholders (e.g., `replicas: {{ .Values.replicaCount }}`).
+* You then provide a `values.yaml` file to fill in those placeholders, allowing you to reuse the same logic across different environments.
+
+#### 3. Version Control and Rollbacks
+Helm keeps a history of your deployments. If you update your application and something breaks, you can instantly roll back to a previous working version:
+`helm rollback <release-name> <revision-number>`
+
+---
+
+### Key Concepts to Know for Interviews
+
+* **Chart:** A bundle of YAML templates and a `values.yaml` file that describes a related set of Kubernetes resources.
+* **Release:** A specific instance of a Chart running in your cluster. You can have multiple "releases" of the same Chart (e.g., `my-app-dev` and `my-app-prod`).
+* **Repo (Repository):** A place where Charts are collected and shared (like [Artifact Hub](https://artifacthub.io/)).
+
+### Real-World Example: Ingress-Nginx
+In the course, you used Helm to install **ingress-nginx**.
+
+Without Helm, you would have had to manually download, edit, and apply a massive, complicated YAML file provided by the Nginx maintainers. With Helm, you simply added the Nginx repo and ran one command to get a fully configured Ingress Controller set up with the correct permissions and services.
+
+**Interview Tip:** If an interviewer asks, "How do you share your Kubernetes configurations across your team?" a great answer is, "We package our application as a **Helm Chart**, which allows us to version our infrastructure and easily customize deployments for different environments using `values.yaml` files."

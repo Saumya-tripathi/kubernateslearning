@@ -1,0 +1,57 @@
+It looks like you've been working through the **HTTPS Setup** and **Local Development with Skaffold** sections of [Docker and Kubernetes: The Complete Guide](https://www.udemy.com/course/docker-and-kubernetes-the-complete-guide/).
+
+To get you ready for a high-level (Level 10) interview, you need to move beyond "how to run the command" and focus on the **architectural "why"** and **security implications**.
+
+---
+
+## Section 17: HTTPS Setup with Kubernetes
+At an expert level, this isn't just about getting a green padlock; it’s about **Automated Certificate Management** and **Trust Chains**.
+
+### 1. Cert-Manager Architecture
+* **The Problem:** Manually renewing SSL/TLS certificates is a recipe for downtime.
+* **The Solution:** [Cert-Manager](https://cert-manager.io/) is a native Kubernetes controller that automates the issuance and renewal of certificates from sources like Let's Encrypt.
+* **Key Resources:**
+    * **Issuer/ClusterIssuer:** Defines *where* to get the certificate (e.g., Let's Encrypt staging vs. production). A `ClusterIssuer` is available across all namespaces.
+    * **Certificate:** A resource that tells Cert-Manager which domain names need a cert and which Issuer to use.
+
+### 2. The ACME Challenge (HTTP-01 vs. DNS-01)
+* **HTTP-01:** Cert-Manager places a "challenge" file on your web server. Let's Encrypt tries to reach it via `http://yourdomain.com/.well-known/acme-challenge/`.
+* **DNS-01:** Cert-Manager creates a temporary TXT record in your DNS provider (GCP, AWS, etc.). This is required for **wildcard certificates** ($*.yourdomain.com$).
+
+### 3. Ingress Integration
+* The **Ingress Controller** (like Nginx) is the "entry point." You update your Ingress manifest to include a `tls:` block pointing to a secret created by Cert-Manager.
+
+> **Interview Tip:** If asked how to handle security at scale, mention that you prefer `ClusterIssuers` for organizational consistency and automated rotation to prevent the #1 cause of service outages: expired certificates.
+
+---
+
+## Section 18: Local Development with Skaffold
+Level 10 developers focus on **Developer Experience (DX)** and shortening the **Inner Loop** (the time between writing code and seeing it run).
+
+### 1. What is Skaffold?
+[Skaffold](https://skaffold.dev/) handles the workflow for building, pushing, and deploying your application. It eliminates the manual cycle of:
+`Code` → `Build Image` → `Push Image` → `Update Manifests` → `Kubectl Apply`.
+
+### 2. Key Operational Modes
+* **Skaffold Dev:** Monitors your source code. When a change is detected, it rebuilds the image (or uses **File Sync** for hot-reloading) and redeploys.
+* **Skaffold Run:** A one-time build and deploy (useful for CI/CD or final sanity checks).
+
+### 3. File Sync (The Game Changer)
+* Standard Docker development often requires a full image rebuild for a simple CSS change.
+* **Skaffold File Sync** injects changed files directly into the running container. This reduces the feedback loop from **minutes to seconds**.
+
+---
+
+## Level 10 Interview Preparation Questions
+
+| Question | Expert-Level Answer Focus |
+| :--- | :--- |
+| **Why use Cert-Manager instead of manual Kubernetes Secrets for SSL?** | Focus on **Rotation and Toil**. Manual secrets don't auto-renew; Cert-Manager monitors expiry and handles the ACME handshake automatically. |
+| **How does Skaffold improve the "Inner Loop"?** | Mention **reproducibility**. It ensures the local dev environment is identical to production (using K8s manifests) while maintaining the speed of local live-reloading. |
+| **What is the difference between an Issuer and a Certificate resource?** | The **Issuer** is the "Account/Strategy" (the *how*), and the **Certificate** is the "Request" for a specific domain (the *what*). |
+| **How would you handle HTTPS for a private internal service?** | Mention using an Internal Issuer (like **Vault** or a private CA) instead of Let's Encrypt, as Let's Encrypt requires public validation. |
+
+---
+
+### Suggested Follow-up
+Would you like to dive deeper into the **YAML configuration** for a `ClusterIssuer`, or should we look at how to optimize a **Skaffold config** for a multi-service architecture?
